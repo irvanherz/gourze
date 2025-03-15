@@ -1,0 +1,45 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+*.out
+
+# Build artifacts
+/dist/
+/bin/
+/vendor/
+/tmp/
+/*.test
+
+# Go modules
+go.mod
+go.sum
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.iml
+
+# Logs & Debugging
+*.log
+*.trace
+*.prof
+*.cov
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Coverage reports
+coverage.out
+*.coverprofile
+
+# Go workspace (if using Go 1.18+ workspaces)
+go.work
+go.work.sum
+
+# Environment variables
+.env
