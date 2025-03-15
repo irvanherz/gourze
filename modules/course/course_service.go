@@ -7,7 +7,7 @@ import (
 )
 
 type CourseService interface {
-	FindManyCourse() ([]Course, error)
+	FindManyCourses() ([]Course, error)
 	CreateCourse(course *dto.CourseCreateInput) (*Course, error)
 	FindCourseByID(id uint) (*Course, error)
 	UpdateCourseByID(id uint, course *dto.CourseUpdateInput) (*Course, error)
@@ -22,7 +22,7 @@ func NewCourseService(db *gorm.DB) CourseService {
 	return &courseService{Db: db}
 }
 
-func (s *courseService) FindManyCourse() ([]Course, error) {
+func (s *courseService) FindManyCourses() ([]Course, error) {
 	var courses []Course
 	if err := s.Db.Find(&courses).Error; err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (s *courseService) CreateCourse(input *dto.CourseCreateInput) (*Course, err
 	var course Course
 	copier.Copy(&course, &input)
 
-	if err := s.Db.Create(course).Error; err != nil {
+	if err := s.Db.Create(&course).Error; err != nil {
 		return nil, err
 	}
 	return &course, nil

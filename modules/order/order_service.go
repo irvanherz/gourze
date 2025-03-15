@@ -7,11 +7,11 @@ import (
 )
 
 type OrderService interface {
-	FindMany() ([]Order, error)
-	Create(order *dto.OrderCreateInput) error
-	FindByID(id uint) (*Order, error)
-	UpdateByID(order *dto.OrderUpdateInput) error
-	DeleteByID(id uint) error
+	FindManyOrders() ([]Order, error)
+	CreateOrder(order *dto.OrderCreateInput) (*Order, error)
+	FindOrderByID(id uint) (*Order, error)
+	UpdateOrderByID(id uint, order *dto.OrderUpdateInput) (*Order, error)
+	DeleteOrderByID(id uint) (*Order, error)
 }
 
 type orderService struct {
@@ -22,7 +22,7 @@ func NewOrderService(db *gorm.DB) OrderService {
 	return &orderService{Db: db}
 }
 
-func (s *orderService) FindMany() ([]Order, error) {
+func (s *orderService) FindManyOrders() ([]Order, error) {
 	var orders []Order
 	if err := s.Db.Find(&orders).Error; err != nil {
 		return nil, err
@@ -30,17 +30,17 @@ func (s *orderService) FindMany() ([]Order, error) {
 	return orders, nil
 }
 
-func (s *orderService) Create(input *dto.OrderCreateInput) error {
+func (s *orderService) CreateOrder(input *dto.OrderCreateInput) (*Order, error) {
 	var order Order
 	copier.Copy(&order, &input)
 
-	if err := s.Db.Create(order).Error; err != nil {
-		return err
+	if err := s.Db.Create(&order).Error; err != nil {
+		return nil, err
 	}
-	return nil
+	return &order, nil
 }
 
-func (s *orderService) FindByID(id uint) (*Order, error) {
+func (s *orderService) FindOrderByID(id uint) (*Order, error) {
 	var order Order
 	if err := s.Db.First(&order, id).Error; err != nil {
 		return nil, err
@@ -48,16 +48,25 @@ func (s *orderService) FindByID(id uint) (*Order, error) {
 	return &order, nil
 }
 
-func (s *orderService) UpdateByID(order *dto.OrderUpdateInput) error {
-	if err := s.Db.Save(order).Error; err != nil {
-		return err
+func (s *orderService) UpdateOrderByID(id uint, input *dto.OrderUpdateInput) (*Order, error) {
+	var order Order
+	if err := s.Db.First(&order, id).Error; err != nil {
+		return nil, err
 	}
-	return nil
+	copier.Copy(&order, &input)
+	if err := s.Db.Save(&order).Error; err != nil {
+		return nil, err
+	}
+	return &order, nil
 }
 
-func (s *orderService) DeleteByID(id uint) error {
-	if err := s.Db.Delete(&Order{}, id).Error; err != nil {
-		return err
+func (s *orderService) DeleteOrderByID(id uint) (*Order, error) {
+	var order Order
+	if err := s.Db.First(&order, id).Error; err != nil {
+		return nil, err
 	}
-	return nil
+	if err := s.Db.Delete(&Order{}, id).Error; err != nil {
+		return nil, err
+	}
+	return &order, nil
 }

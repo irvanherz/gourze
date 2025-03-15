@@ -3,8 +3,8 @@ package core
 import (
 	"fmt"
 	"log"
-	"os"
 
+	"github.com/irvanherz/gourze/config"
 	"github.com/irvanherz/gourze/modules/course"
 	"github.com/irvanherz/gourze/modules/media"
 	"github.com/irvanherz/gourze/modules/order"
@@ -13,14 +13,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func ProvideDatabase() (*gorm.DB, error) {
+func ProvideDatabase(config *config.Config) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASS"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
+		config.Database.Host,
+		config.Database.User,
+		config.Database.Pass,
+		config.Database.Name,
+		config.Database.Port,
 	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

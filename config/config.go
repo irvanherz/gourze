@@ -34,7 +34,7 @@ type AuthConfig struct {
 func ProvideConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
-		panic("⚠️ No .env file found, using system environment variables")
+		panic("⚠️ No .env file found!")
 	}
 	return &Config{
 		Database: DatabaseConfig{

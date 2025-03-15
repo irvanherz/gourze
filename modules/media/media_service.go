@@ -35,11 +35,10 @@ var photoImageSizes = []ImageSize{
 }
 
 type MediaService interface {
-	FindMany() ([]Media, error)
-	Create(media *dto.MediaCreateInput) error
-	FindByID(id uint) (*Media, error)
-	UpdateByID(media *dto.MediaUpdateInput) error
-	DeleteByID(id uint) error
+	FindManyMedia() ([]Media, error)
+	FindMediaByID(id uint) (*Media, error)
+	UpdateMediaByID(id uint, media *dto.MediaUpdateInput) (*Media, error)
+	DeleteMediaByID(id uint) (*Media, error)
 	UploadPhoto(file multipart.File, originalName string) (*Media, error)
 }
 
@@ -52,7 +51,7 @@ func NewMediaService(db *gorm.DB, conf *config.Config) MediaService {
 	return &mediaService{Db: db, Config: conf}
 }
 
-func (s *mediaService) FindMany() ([]Media, error) {
+func (s *mediaService) FindManyMedia() ([]Media, error) {
 	var medias []Media
 	if err := s.Db.Find(&medias).Error; err != nil {
 		return nil, err
@@ -60,17 +59,7 @@ func (s *mediaService) FindMany() ([]Media, error) {
 	return medias, nil
 }
 
-func (s *mediaService) Create(input *dto.MediaCreateInput) error {
-	var media Media
-	copier.Copy(&media, &input)
-
-	if err := s.Db.Create(media).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *mediaService) FindByID(id uint) (*Media, error) {
+func (s *mediaService) FindMediaByID(id uint) (*Media, error) {
 	var media Media
 	if err := s.Db.First(&media, id).Error; err != nil {
 		return nil, err
@@ -78,18 +67,27 @@ func (s *mediaService) FindByID(id uint) (*Media, error) {
 	return &media, nil
 }
 
-func (s *mediaService) UpdateByID(media *dto.MediaUpdateInput) error {
-	if err := s.Db.Save(media).Error; err != nil {
-		return err
+func (s *mediaService) UpdateMediaByID(id uint, input *dto.MediaUpdateInput) (*Media, error) {
+	var media Media
+	if err := s.Db.First(&media, id).Error; err != nil {
+		return nil, err
 	}
-	return nil
+	copier.Copy(&media, &input)
+	if err := s.Db.Save(&media).Error; err != nil {
+		return nil, err
+	}
+	return &media, nil
 }
 
-func (s *mediaService) DeleteByID(id uint) error {
-	if err := s.Db.Delete(&Media{}, id).Error; err != nil {
-		return err
+func (s *mediaService) DeleteMediaByID(id uint) (*Media, error) {
+	var media Media
+	if err := s.Db.First(&media, id).Error; err != nil {
+		return nil, err
 	}
-	return nil
+	if err := s.Db.Delete(&Media{}, id).Error; err != nil {
+		return nil, err
+	}
+	return &media, nil
 }
 
 func (s *mediaService) UploadPhoto(file multipart.File, originalFileName string) (*Media, error) {

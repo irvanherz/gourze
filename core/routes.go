@@ -13,6 +13,7 @@ import (
 type RouterParams struct {
 	fx.In
 	AuthController   *auth.AuthController
+	AuthMiddleware   *auth.AuthMiddleware
 	UserController   *user.UserController
 	MediaController  *media.MediaController
 	CourseController *course.CourseController
@@ -21,6 +22,7 @@ type RouterParams struct {
 
 func ProvideRouter(params RouterParams) *gin.Engine {
 	r := gin.Default()
+	r.Use(params.AuthMiddleware.Authenticate())
 
 	authRoutes := r.Group("/auth")
 	{
@@ -30,15 +32,14 @@ func ProvideRouter(params RouterParams) *gin.Engine {
 
 	userRoutes := r.Group("/users")
 	{
-		userRoutes.GET("/", params.UserController.FindMany)
-		userRoutes.POST("/", params.UserController.Create)
+		userRoutes.GET("/", params.AuthMiddleware.Authorize(true, user.Admin), params.UserController.FindManyUsers)
+		userRoutes.POST("/", params.AuthMiddleware.Authorize(true, user.Admin), params.UserController.CreateUsers)
 	}
 
 	mediaRoutes := r.Group("/media")
 	{
-		mediaRoutes.GET("/", params.MediaController.FindMany)
-		mediaRoutes.POST("/", params.MediaController.Create)
-		mediaRoutes.POST("/upload-photo", params.MediaController.UploadPhoto)
+		mediaRoutes.GET("/", params.AuthMiddleware.Authorize(false), params.MediaController.FindManyMedia)
+		mediaRoutes.POST("/upload-photo", params.AuthMiddleware.Authorize(true), params.MediaController.UploadPhoto)
 	}
 
 	courseRoutes := r.Group("/courses")
@@ -49,11 +50,11 @@ func ProvideRouter(params RouterParams) *gin.Engine {
 
 	orderRoutes := r.Group("/orders")
 	{
-		orderRoutes.GET("/", params.OrderController.FindMany)
-		orderRoutes.POST("/", params.OrderController.Create)
-		orderRoutes.GET("/:id", params.OrderController.FindOne)
-		orderRoutes.PUT("/:id", params.OrderController.UpdateByID)
-		orderRoutes.DELETE("/:id", params.OrderController.DeleteByID)
+		orderRoutes.GET("/", params.OrderController.FindManyOrders)
+		orderRoutes.POST("/", params.OrderController.CreateOrder)
+		orderRoutes.GET("/:id", params.OrderController.FindOrderByID)
+		orderRoutes.PUT("/:id", params.OrderController.UpdateOrderByID)
+		orderRoutes.DELETE("/:id", params.OrderController.DeleteOrderByID)
 	}
 
 	return r

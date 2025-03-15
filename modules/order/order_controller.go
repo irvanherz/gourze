@@ -16,66 +16,76 @@ func NewOrderController(service OrderService) *OrderController {
 	return &OrderController{service}
 }
 
-func (uc *OrderController) FindMany(c *gin.Context) {
-	orders, err := uc.Service.FindMany()
+func (oc *OrderController) FindManyOrders(c *gin.Context) {
+	orders, err := oc.Service.FindManyOrders()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, orders)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": orders})
 }
 
-func (uc *OrderController) Create(c *gin.Context) {
-	var order dto.OrderCreateInput
-	if err := c.ShouldBindJSON(&order); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (oc *OrderController) CreateOrder(c *gin.Context) {
+	var orderInput dto.OrderCreateInput
+	if err := c.ShouldBindJSON(&orderInput); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	if err := uc.Service.Create(&order); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	order, err := oc.Service.CreateOrder(&orderInput)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, order)
+	c.JSON(http.StatusCreated, gin.H{"code": "ok", "message": "Order created successfully", "data": order})
 }
 
-func (uc *OrderController) FindOne(c *gin.Context) {
+func (oc *OrderController) FindOrderByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid order ID"})
 		return
 	}
-	order, err := uc.Service.FindByID(uint(uid))
+	order, err := oc.Service.FindOrderByID(uint(uid))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, order)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": order})
 }
 
-func (uc *OrderController) UpdateByID(c *gin.Context) {
-	var order dto.OrderUpdateInput
-	if err := c.ShouldBindJSON(&order); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := uc.Service.UpdateByID(&order); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, order)
-}
-
-func (uc *OrderController) DeleteByID(c *gin.Context) {
+func (oc *OrderController) UpdateOrderByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid order ID"})
 		return
 	}
-	if err := uc.Service.DeleteByID(uint(uid)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	var orderInput dto.OrderUpdateInput
+	if err := c.ShouldBindJSON(&orderInput); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusNoContent, nil)
+	order, err := oc.Service.UpdateOrderByID(uint(uid), &orderInput)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Order updated successfully", "data": order})
+}
+
+func (oc *OrderController) DeleteOrderByID(c *gin.Context) {
+	id := c.Param("id")
+	uid, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid order ID"})
+		return
+	}
+	order, err := oc.Service.DeleteOrderByID(uint(uid))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{"code": "ok", "message": "Order deleted successfully", "data": order})
 }

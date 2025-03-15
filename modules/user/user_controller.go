@@ -16,66 +16,76 @@ func NewUserController(service UserService) *UserController {
 	return &UserController{service}
 }
 
-func (uc *UserController) FindMany(c *gin.Context) {
-	users, err := uc.Service.FindMany()
+func (uc *UserController) FindManyUsers(c *gin.Context) {
+	users, err := uc.Service.FindManyUsers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, users)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": users})
 }
 
-func (uc *UserController) Create(c *gin.Context) {
-	var user dto.UserCreateInput
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (uc *UserController) CreateUsers(c *gin.Context) {
+	var userInput dto.UserCreateInput
+	if err := c.ShouldBindJSON(&userInput); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	if err := uc.Service.Create(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	user, err := uc.Service.CreateUser(&userInput)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusCreated, gin.H{"code": "ok", "message": "User created successfully", "data": user})
 }
 
-func (uc *UserController) FindOne(c *gin.Context) {
+func (uc *UserController) FindUserByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid user ID"})
 		return
 	}
-	user, err := uc.Service.FindByID(uint(uid))
+	user, err := uc.Service.FindUserByID(uint(uid))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": user})
 }
 
-func (uc *UserController) UpdateByID(c *gin.Context) {
-	var user dto.UserUpdateInput
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := uc.Service.UpdateByID(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, user)
-}
-
-func (uc *UserController) DeleteByID(c *gin.Context) {
+func (uc *UserController) UpdateUserByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid user ID"})
 		return
 	}
-	if err := uc.Service.DeleteByID(uint(uid)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	var userInput dto.UserUpdateInput
+	if err := c.ShouldBindJSON(&userInput); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusNoContent, nil)
+	user, err := uc.Service.UpdateUserByID(uint(uid), &userInput)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "User updated successfully", "data": user})
+}
+
+func (uc *UserController) DeleteUserByID(c *gin.Context) {
+	id := c.Param("id")
+	uid, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "ok", "message": "Invalid user ID"})
+		return
+	}
+	user, err := uc.Service.DeleteUserByID(uint(uid))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{"code": "ok", "message": "User deleted successfully", "data": user})
 }

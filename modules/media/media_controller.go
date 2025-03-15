@@ -19,7 +19,7 @@ func NewMediaController(service MediaService) *MediaController {
 func (uc *MediaController) UploadPhoto(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
 	defer file.Close()
@@ -27,73 +27,68 @@ func (uc *MediaController) UploadPhoto(c *gin.Context) {
 	filename := header.Filename
 	media, err := uc.Service.UploadPhoto(file, filename)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "data": media})
-
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "File uploaded successfully", "data": media})
 }
 
-func (uc *MediaController) FindMany(c *gin.Context) {
-	medias, err := uc.Service.FindMany()
+func (uc *MediaController) FindManyMedia(c *gin.Context) {
+	medias, err := uc.Service.FindManyMedia()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, medias)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": medias})
 }
 
-func (uc *MediaController) Create(c *gin.Context) {
-	var media dto.MediaCreateInput
-	if err := c.ShouldBindJSON(&media); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-		return
-	}
-	if err := uc.Service.Create(&media); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
-	}
-	c.JSON(http.StatusCreated, media)
-}
-
-func (uc *MediaController) FindOne(c *gin.Context) {
+func (uc *MediaController) FindMediaByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid media ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid media ID"})
 		return
 	}
-	media, err := uc.Service.FindByID(uint(uid))
+	media, err := uc.Service.FindMediaByID(uint(uid))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, media)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": media})
 }
 
-func (uc *MediaController) UpdateByID(c *gin.Context) {
+func (uc *MediaController) UpdateMediaByID(c *gin.Context) {
+	id := c.Param("id")
+	uid, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid media ID"})
+		return
+	}
+
 	var media dto.MediaUpdateInput
 	if err := c.ShouldBindJSON(&media); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	if err := uc.Service.UpdateByID(&media); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+	updatedMedia, err := uc.Service.UpdateMediaByID(uint(uid), &media)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, media)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Media updated successfully", "data": updatedMedia})
 }
 
-func (uc *MediaController) DeleteByID(c *gin.Context) {
+func (uc *MediaController) DeleteMediaByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid media ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid media ID"})
 		return
 	}
-	if err := uc.Service.DeleteByID(uint(uid)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+	media, err := uc.Service.DeleteMediaByID(uint(uid))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusNoContent, nil)
+	c.JSON(http.StatusNoContent, gin.H{"code": "ok", "message": "Media deleted successfully", "data": media})
 }

@@ -17,41 +17,41 @@ func NewCourseController(service CourseService) *CourseController {
 }
 
 func (cc *CourseController) FindManyCourse(c *gin.Context) {
-	courses, err := cc.Service.FindManyCourse()
+	courses, err := cc.Service.FindManyCourses()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, courses)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": courses})
 }
 
 func (cc *CourseController) CreateCourse(c *gin.Context) {
 	var input dto.CourseCreateInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
 	course, err := cc.Service.CreateCourse(&input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, course)
+	c.JSON(http.StatusCreated, gin.H{"code": "ok", "message": "Course created successfully", "data": course})
 }
 
 func (cc *CourseController) FindOneCourse(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid course ID"})
 		return
 	}
 	course, err := cc.Service.FindCourseByID(uint(uid))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, course)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": course})
 }
 
 func (cc *CourseController) UpdateCourse(c *gin.Context) {
@@ -59,32 +59,32 @@ func (cc *CourseController) UpdateCourse(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid course ID"})
 		return
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
 	course, err := cc.Service.UpdateCourseByID(uint(uid), &input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, course)
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Course updated successfully", "data": course})
 }
 
 func (cc *CourseController) DeleteCourse(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid course ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid course ID"})
 		return
 	}
 	course, err := cc.Service.DeleteCourseByID(uint(uid))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusNoContent, course)
+	c.JSON(http.StatusNoContent, gin.H{"code": "ok", "message": "Course deleted successfully", "data": course})
 }
