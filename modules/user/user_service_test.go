@@ -38,9 +38,10 @@ func (suite *UserServiceTestSuite) TestFindManyUsers() {
 		Take:      10,
 	}
 
-	users, err := suite.service.FindManyUsers(filter)
+	users, count, err := suite.service.FindManyUsers(filter)
 	suite.NoError(err)
 	suite.Len(users, 2)
+	suite.Equal(int64(2), count)
 }
 
 func (suite *UserServiceTestSuite) TestCreateUser() {

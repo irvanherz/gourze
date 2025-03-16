@@ -30,12 +30,26 @@ func (uc *userController) FindManyUsers(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	users, err := uc.Service.FindManyUsers(&filter)
+	users, count, err := uc.Service.FindManyUsers(&filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": users})
+	page := filter.Page
+	take := filter.Take
+	numPages := (count + int64(take) - 1) / int64(take)
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    "ok",
+		"message": "Success",
+		"data":    users,
+		"meta": gin.H{
+			"numItems": count,
+			"page":     page,
+			"numPages": numPages,
+			"take":     take,
+		},
+	})
 }
 
 func (uc *userController) CreateUser(c *gin.Context) {

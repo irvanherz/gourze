@@ -31,7 +31,7 @@ type FullNameFilter struct {
 	Val []string                           `form:"fullName.val"`
 }
 
-func (filter *UserFilterInput) Apply(query *gorm.DB) *gorm.DB {
+func (filter *UserFilterInput) ApplyFilter(query *gorm.DB) *gorm.DB {
 	if filter.Username != nil && filter.Username.Val != nil {
 		switch filter.Username.Op {
 		case "equals":
@@ -88,7 +88,10 @@ func (filter *UserFilterInput) Apply(query *gorm.DB) *gorm.DB {
 			query = query.Where("full_name NOT IN ?", filter.FullName.Val)
 		}
 	}
+	return query
+}
 
+func (filter *UserFilterInput) ApplyPagination(query *gorm.DB) *gorm.DB {
 	desc := filter.SortOrder == "desc"
 	query = query.Order(clause.OrderByColumn{Column: clause.Column{Name: filter.SortBy}, Desc: desc})
 	offset := (filter.Page - 1) * filter.Take

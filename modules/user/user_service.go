@@ -8,7 +8,7 @@ import (
 )
 
 type UserService interface {
-	FindManyUsers(filter *dto.UserFilterInput) ([]User, error)
+	FindManyUsers(filter *dto.UserFilterInput) ([]User, int64, error)
 	CreateUser(user *dto.UserCreateInput) (*User, error)
 	FindUserByID(id uint) (*User, error)
 	UpdateUserByID(id uint, user *dto.UserUpdateInput) (*User, error)
@@ -23,19 +23,26 @@ func NewUserService(db *gorm.DB) UserService {
 	return &userService{Db: db}
 }
 
-func (s *userService) FindManyUsers(filter *dto.UserFilterInput) ([]User, error) {
+func (s *userService) FindManyUsers(filter *dto.UserFilterInput) ([]User, int64, error) {
 	var users []User
+	var count int64
 
 	if err := defaults.Set(filter); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	query := s.Db
-	query = filter.Apply(query)
+	query = filter.ApplyFilter(query)
+
+	if err := query.Model(&User{}).Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	query = filter.ApplyPagination(query)
 
 	if err := query.Find(&users).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return users, nil
+	return users, count, nil
 }
 
 func (s *userService) CreateUser(input *dto.UserCreateInput) (*User, error) {

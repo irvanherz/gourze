@@ -19,7 +19,7 @@ type UserIdFilter struct {
 	Val []uint                             `form:"userId.val"`
 }
 
-func (filter *MediaFilterInput) Apply(query *gorm.DB) *gorm.DB {
+func (filter *MediaFilterInput) ApplyFilter(query *gorm.DB) *gorm.DB {
 	if filter.UserId != nil && filter.UserId.Val != nil {
 		switch filter.UserId.Op {
 		case number_filter.Equals:
@@ -41,6 +41,15 @@ func (filter *MediaFilterInput) Apply(query *gorm.DB) *gorm.DB {
 		}
 	}
 
+	desc := filter.SortOrder == "desc"
+	query = query.Order(clause.OrderByColumn{Column: clause.Column{Name: filter.SortBy}, Desc: desc})
+	offset := (filter.Page - 1) * filter.Take
+	query = query.Offset(int(offset)).Limit(int(filter.Take))
+
+	return query
+}
+
+func (filter *MediaFilterInput) ApplyPagination(query *gorm.DB) *gorm.DB {
 	desc := filter.SortOrder == "desc"
 	query = query.Order(clause.OrderByColumn{Column: clause.Column{Name: filter.SortBy}, Desc: desc})
 	offset := (filter.Page - 1) * filter.Take

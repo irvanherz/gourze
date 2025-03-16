@@ -30,12 +30,26 @@ func (cc *courseController) FindManyCourses(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	courses, err := cc.Service.FindManyCourses(&filter)
+	courses, count, err := cc.Service.FindManyCourses(&filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": courses})
+	page := filter.Page
+	take := filter.Take
+	numPages := (count + int64(take) - 1) / int64(take)
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    "ok",
+		"message": "Success",
+		"data":    courses,
+		"meta": gin.H{
+			"numItems": count,
+			"page":     page,
+			"numPages": numPages,
+			"take":     take,
+		},
+	})
 }
 
 func (cc *courseController) CreateCourse(c *gin.Context) {

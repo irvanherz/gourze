@@ -23,19 +23,32 @@ type orderController struct {
 func NewOrderController(service OrderService) OrderController {
 	return &orderController{service}
 }
-
 func (oc *orderController) FindManyOrders(c *gin.Context) {
 	var filter dto.OrderFilterInput
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	orders, err := oc.Service.FindManyOrders(&filter)
+	orders, count, err := oc.Service.FindManyOrders(&filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": orders})
+	page := filter.Page
+	take := filter.Take
+	numPages := (count + int64(take) - 1) / int64(take)
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    "ok",
+		"message": "Success",
+		"data":    orders,
+		"meta": gin.H{
+			"numItems": count,
+			"page":     page,
+			"numPages": numPages,
+			"take":     take,
+		},
+	})
 }
 
 func (oc *orderController) CreateOrder(c *gin.Context) {

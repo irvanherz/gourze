@@ -40,19 +40,32 @@ func (mc *mediaController) UploadPhoto(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "File uploaded successfully", "data": media})
 }
-
 func (mc *mediaController) FindManyMedia(c *gin.Context) {
 	var filter dto.MediaFilterInput
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	medias, err := mc.Service.FindManyMedia(&filter)
+	medias, count, err := mc.Service.FindManyMedia(&filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": medias})
+	page := filter.Page
+	take := filter.Take
+	numPages := (count + int64(take) - 1) / int64(take)
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    "ok",
+		"message": "Success",
+		"data":    medias,
+		"meta": gin.H{
+			"numItems": count,
+			"page":     page,
+			"numPages": numPages,
+			"take":     take,
+		},
+	})
 }
 
 func (mc *mediaController) FindMediaByID(c *gin.Context) {

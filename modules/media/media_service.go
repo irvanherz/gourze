@@ -36,7 +36,7 @@ var photoImageSizes = []ImageSize{
 }
 
 type MediaService interface {
-	FindManyMedia(filter *dto.MediaFilterInput) ([]Media, error)
+	FindManyMedia(filter *dto.MediaFilterInput) ([]Media, int64, error)
 	FindMediaByID(id uint) (*Media, error)
 	UpdateMediaByID(id uint, media *dto.MediaUpdateInput) (*Media, error)
 	DeleteMediaByID(id uint) (*Media, error)
@@ -52,18 +52,26 @@ func NewMediaService(db *gorm.DB, conf *config.Config) MediaService {
 	return &mediaService{Db: db, Config: conf}
 }
 
-func (s *mediaService) FindManyMedia(filter *dto.MediaFilterInput) ([]Media, error) {
+func (s *mediaService) FindManyMedia(filter *dto.MediaFilterInput) ([]Media, int64, error) {
 	var medias []Media
+	var count int64
+
 	if err := defaults.Set(filter); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	query := s.Db
-	query = filter.Apply(query)
+	query = filter.ApplyFilter(query)
+
+	if err := query.Model(&Media{}).Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	query = filter.ApplyPagination(query)
 
 	if err := query.Find(&medias).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return medias, nil
+	return medias, count, nil
 }
 
 func (s *mediaService) FindMediaByID(id uint) (*Media, error) {

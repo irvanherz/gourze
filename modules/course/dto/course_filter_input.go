@@ -19,7 +19,7 @@ type UserIdFilter struct {
 	Val []uint                             `form:"userId.val"`
 }
 
-func (filter *CourseFilterInput) Apply(query *gorm.DB) *gorm.DB {
+func (filter *CourseFilterInput) ApplyFilter(query *gorm.DB) *gorm.DB {
 	if filter.UserId != nil && filter.UserId.Val != nil {
 		switch filter.UserId.Op {
 		case number_filter.Equals:
@@ -40,7 +40,10 @@ func (filter *CourseFilterInput) Apply(query *gorm.DB) *gorm.DB {
 			query = query.Where("user_id <= ?", filter.UserId.Val)
 		}
 	}
+	return query
+}
 
+func (filter *CourseFilterInput) ApplyPagination(query *gorm.DB) *gorm.DB {
 	desc := filter.SortOrder == "desc"
 	query = query.Order(clause.OrderByColumn{Column: clause.Column{Name: filter.SortBy}, Desc: desc})
 	offset := (filter.Page - 1) * filter.Take

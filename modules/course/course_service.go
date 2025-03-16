@@ -8,7 +8,7 @@ import (
 )
 
 type CourseService interface {
-	FindManyCourses(filter *dto.CourseFilterInput) ([]Course, error)
+	FindManyCourses(filter *dto.CourseFilterInput) ([]Course, int64, error)
 	CreateCourse(course *dto.CourseCreateInput) (*Course, error)
 	FindCourseByID(id uint) (*Course, error)
 	UpdateCourseByID(id uint, course *dto.CourseUpdateInput) (*Course, error)
@@ -22,19 +22,26 @@ type courseService struct {
 func NewCourseService(db *gorm.DB) CourseService {
 	return &courseService{Db: db}
 }
-
-func (s *courseService) FindManyCourses(filter *dto.CourseFilterInput) ([]Course, error) {
+func (s *courseService) FindManyCourses(filter *dto.CourseFilterInput) ([]Course, int64, error) {
 	var courses []Course
+	var count int64
+
 	if err := defaults.Set(filter); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	query := s.Db
-	query = filter.Apply(query)
+	query = filter.ApplyFilter(query)
+
+	if err := query.Model(&Course{}).Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	query = filter.ApplyPagination(query)
 
 	if err := query.Find(&courses).Error; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return courses, nil
+	return courses, count, nil
 }
 
 func (s *courseService) CreateCourse(input *dto.CourseCreateInput) (*Course, error) {

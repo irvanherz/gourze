@@ -8,7 +8,7 @@ import (
 )
 
 type OrderService interface {
-	FindManyOrders(filter *dto.OrderFilterInput) ([]Order, error)
+	FindManyOrders(filter *dto.OrderFilterInput) ([]Order, int64, error)
 	CreateOrder(order *dto.OrderCreateInput) (*Order, error)
 	FindOrderByID(id uint) (*Order, error)
 	UpdateOrderByID(id uint, order *dto.OrderUpdateInput) (*Order, error)
@@ -22,21 +22,26 @@ type orderService struct {
 func NewOrderService(db *gorm.DB) OrderService {
 	return &orderService{Db: db}
 }
-
-func (s *orderService) FindManyOrders(filter *dto.OrderFilterInput) ([]Order, error) {
+func (s *orderService) FindManyOrders(filter *dto.OrderFilterInput) ([]Order, int64, error) {
 	var orders []Order
+	var count int64
 
 	if err := defaults.Set(filter); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	query := s.Db
-	query = filter.Apply(query)
+	query = filter.ApplyFilter(query)
 
-	if err := query.Find(&orders).Error; err != nil {
-		return nil, err
+	if err := query.Model(&Order{}).Count(&count).Error; err != nil {
+		return nil, 0, err
 	}
 
-	return orders, nil
+	query = filter.ApplyPagination(query)
+
+	if err := query.Find(&orders).Error; err != nil {
+		return nil, 0, err
+	}
+	return orders, count, nil
 }
 
 func (s *orderService) CreateOrder(input *dto.OrderCreateInput) (*Order, error) {

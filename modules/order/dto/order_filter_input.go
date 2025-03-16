@@ -25,7 +25,7 @@ type AmountFilter struct {
 	Val []uint                             `form:"amount.val"`
 }
 
-func (filter *OrderFilterInput) Apply(query *gorm.DB) *gorm.DB {
+func (filter *OrderFilterInput) ApplyFilter(query *gorm.DB) *gorm.DB {
 	if filter.UserId != nil && filter.UserId.Val != nil {
 		switch filter.UserId.Op {
 		case number_filter.Equals:
@@ -67,7 +67,10 @@ func (filter *OrderFilterInput) Apply(query *gorm.DB) *gorm.DB {
 			query = query.Where("amount <= ?", filter.Amount.Val)
 		}
 	}
+	return query
+}
 
+func (filter *OrderFilterInput) ApplyPagination(query *gorm.DB) *gorm.DB {
 	desc := filter.SortOrder == "desc"
 	query = query.Order(clause.OrderByColumn{Column: clause.Column{Name: filter.SortBy}, Desc: desc})
 	offset := (filter.Page - 1) * filter.Take
