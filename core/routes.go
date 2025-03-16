@@ -12,12 +12,12 @@ import (
 
 type RouterParams struct {
 	fx.In
-	AuthController   *auth.AuthController
-	AuthMiddleware   *auth.AuthMiddleware
-	UserController   *user.UserController
-	MediaController  *media.MediaController
-	CourseController *course.CourseController
-	OrderController  *order.OrderController
+	AuthController   auth.AuthController
+	AuthMiddleware   auth.AuthMiddleware
+	UserController   user.UserController
+	MediaController  media.MediaController
+	CourseController course.CourseController
+	OrderController  order.OrderController
 }
 
 func ProvideRouter(params RouterParams) *gin.Engine {

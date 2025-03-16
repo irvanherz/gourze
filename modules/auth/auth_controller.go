@@ -7,21 +7,26 @@ import (
 	"github.com/irvanherz/gourze/modules/auth/dto"
 )
 
-type AuthController struct {
+type AuthController interface {
+	Signin(*gin.Context)
+	Signup(*gin.Context)
+}
+
+type authController struct {
 	Service AuthService
 }
 
-func NewAuthController(service AuthService) *AuthController {
-	return &AuthController{service}
+func NewAuthController(service AuthService) AuthController {
+	return &authController{service}
 }
 
-func (uc *AuthController) Signin(c *gin.Context) {
+func (ac *authController) Signin(c *gin.Context) {
 	var input dto.AuthSigninInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	result, err := uc.Service.Signin(input)
+	result, err := ac.Service.Signin(input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
@@ -29,13 +34,13 @@ func (uc *AuthController) Signin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Signin successful", "data": result})
 }
 
-func (uc *AuthController) Signup(c *gin.Context) {
+func (ac *authController) Signup(c *gin.Context) {
 	var input dto.AuthSignupInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	result, err := uc.Service.Signup(input)
+	result, err := ac.Service.Signup(input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return

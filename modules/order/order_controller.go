@@ -8,15 +8,23 @@ import (
 	"github.com/irvanherz/gourze/modules/order/dto"
 )
 
-type OrderController struct {
+type OrderController interface {
+	FindManyOrders(*gin.Context)
+	CreateOrder(*gin.Context)
+	FindOrderByID(*gin.Context)
+	UpdateOrderByID(*gin.Context)
+	DeleteOrderByID(*gin.Context)
+}
+
+type orderController struct {
 	Service OrderService
 }
 
-func NewOrderController(service OrderService) *OrderController {
-	return &OrderController{service}
+func NewOrderController(service OrderService) OrderController {
+	return &orderController{service}
 }
 
-func (oc *OrderController) FindManyOrders(c *gin.Context) {
+func (oc *orderController) FindManyOrders(c *gin.Context) {
 	var filter dto.OrderFilterInput
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
@@ -30,7 +38,7 @@ func (oc *OrderController) FindManyOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": orders})
 }
 
-func (oc *OrderController) CreateOrder(c *gin.Context) {
+func (oc *orderController) CreateOrder(c *gin.Context) {
 	var orderInput dto.OrderCreateInput
 	if err := c.ShouldBindJSON(&orderInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
@@ -44,7 +52,7 @@ func (oc *OrderController) CreateOrder(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"code": "ok", "message": "Order created successfully", "data": order})
 }
 
-func (oc *OrderController) FindOrderByID(c *gin.Context) {
+func (oc *orderController) FindOrderByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
@@ -59,7 +67,7 @@ func (oc *OrderController) FindOrderByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": order})
 }
 
-func (oc *OrderController) UpdateOrderByID(c *gin.Context) {
+func (oc *orderController) UpdateOrderByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
@@ -80,7 +88,7 @@ func (oc *OrderController) UpdateOrderByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Order updated successfully", "data": order})
 }
 
-func (oc *OrderController) DeleteOrderByID(c *gin.Context) {
+func (oc *orderController) DeleteOrderByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {

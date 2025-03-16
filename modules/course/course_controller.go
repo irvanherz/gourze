@@ -8,15 +8,23 @@ import (
 	"github.com/irvanherz/gourze/modules/course/dto"
 )
 
-type CourseController struct {
+type CourseController interface {
+	FindManyCourses(*gin.Context)
+	FindCourseByID(*gin.Context)
+	CreateCourse(*gin.Context)
+	UpdateCourseByID(*gin.Context)
+	DeleteCourseByID(*gin.Context)
+}
+
+type courseController struct {
 	Service CourseService
 }
 
-func NewCourseController(service CourseService) *CourseController {
-	return &CourseController{service}
+func NewCourseController(service CourseService) CourseController {
+	return &courseController{service}
 }
 
-func (cc *CourseController) FindManyCourses(c *gin.Context) {
+func (cc *courseController) FindManyCourses(c *gin.Context) {
 	var filter dto.CourseFilterInput
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
@@ -30,7 +38,7 @@ func (cc *CourseController) FindManyCourses(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": courses})
 }
 
-func (cc *CourseController) CreateCourse(c *gin.Context) {
+func (cc *courseController) CreateCourse(c *gin.Context) {
 	var input dto.CourseCreateInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
@@ -44,7 +52,7 @@ func (cc *CourseController) CreateCourse(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"code": "ok", "message": "Course created successfully", "data": course})
 }
 
-func (cc *CourseController) FindCourseByID(c *gin.Context) {
+func (cc *courseController) FindCourseByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
@@ -59,7 +67,7 @@ func (cc *CourseController) FindCourseByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": course})
 }
 
-func (cc *CourseController) UpdateCourseByID(c *gin.Context) {
+func (cc *courseController) UpdateCourseByID(c *gin.Context) {
 	var input dto.CourseUpdateInput
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
@@ -79,7 +87,7 @@ func (cc *CourseController) UpdateCourseByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Course updated successfully", "data": course})
 }
 
-func (cc *CourseController) DeleteCourseByID(c *gin.Context) {
+func (cc *courseController) DeleteCourseByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {

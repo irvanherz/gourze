@@ -8,15 +8,23 @@ import (
 	"github.com/irvanherz/gourze/modules/media/dto"
 )
 
-type MediaController struct {
+type MediaController interface {
+	FindManyMedia(*gin.Context)
+	FindMediaByID(*gin.Context)
+	UpdateMediaByID(*gin.Context)
+	DeleteMediaByID(*gin.Context)
+	UploadPhoto(*gin.Context)
+}
+
+type mediaController struct {
 	Service MediaService
 }
 
-func NewMediaController(service MediaService) *MediaController {
-	return &MediaController{service}
+func NewMediaController(service MediaService) MediaController {
+	return &mediaController{service}
 }
 
-func (uc *MediaController) UploadPhoto(c *gin.Context) {
+func (mc *mediaController) UploadPhoto(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
@@ -25,7 +33,7 @@ func (uc *MediaController) UploadPhoto(c *gin.Context) {
 	defer file.Close()
 
 	filename := header.Filename
-	media, err := uc.Service.UploadPhoto(file, filename)
+	media, err := mc.Service.UploadPhoto(file, filename)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
@@ -33,13 +41,13 @@ func (uc *MediaController) UploadPhoto(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "File uploaded successfully", "data": media})
 }
 
-func (uc *MediaController) FindManyMedia(c *gin.Context) {
+func (mc *mediaController) FindManyMedia(c *gin.Context) {
 	var filter dto.MediaFilterInput
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	medias, err := uc.Service.FindManyMedia(&filter)
+	medias, err := mc.Service.FindManyMedia(&filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
@@ -47,14 +55,14 @@ func (uc *MediaController) FindManyMedia(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": medias})
 }
 
-func (uc *MediaController) FindMediaByID(c *gin.Context) {
+func (mc *mediaController) FindMediaByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid media ID"})
 		return
 	}
-	media, err := uc.Service.FindMediaByID(uint(uid))
+	media, err := mc.Service.FindMediaByID(uint(uid))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
@@ -62,7 +70,7 @@ func (uc *MediaController) FindMediaByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": media})
 }
 
-func (uc *MediaController) UpdateMediaByID(c *gin.Context) {
+func (mc *mediaController) UpdateMediaByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
@@ -75,7 +83,7 @@ func (uc *MediaController) UpdateMediaByID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
 		return
 	}
-	updatedMedia, err := uc.Service.UpdateMediaByID(uint(uid), &media)
+	updatedMedia, err := mc.Service.UpdateMediaByID(uint(uid), &media)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
@@ -83,14 +91,14 @@ func (uc *MediaController) UpdateMediaByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Media updated successfully", "data": updatedMedia})
 }
 
-func (uc *MediaController) DeleteMediaByID(c *gin.Context) {
+func (mc *mediaController) DeleteMediaByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": "Invalid media ID"})
 		return
 	}
-	media, err := uc.Service.DeleteMediaByID(uint(uid))
+	media, err := mc.Service.DeleteMediaByID(uint(uid))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return

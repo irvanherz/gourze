@@ -10,11 +10,16 @@ import (
 	"github.com/irvanherz/gourze/modules/user"
 )
 
-type AuthMiddleware struct {
+type AuthMiddleware interface {
+	Authenticate() gin.HandlerFunc
+	Authorize(mandatory bool, allowedRoles ...user.UserRole) gin.HandlerFunc
+}
+
+type authMiddleware struct {
 	Config *config.Config
 }
 
-func (m *AuthMiddleware) Authorize(mandatory bool, allowedRoles ...user.UserRole) gin.HandlerFunc {
+func (m *authMiddleware) Authorize(mandatory bool, allowedRoles ...user.UserRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user, exists := c.Get("user")
 
@@ -50,7 +55,7 @@ func (m *AuthMiddleware) Authorize(mandatory bool, allowedRoles ...user.UserRole
 }
 
 // Optional authentication - proceeds even if auth fails
-func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
+func (m *authMiddleware) Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims, err := m.parseAccessTokenFromCookie(c)
 		if err == nil {
@@ -60,7 +65,7 @@ func (m *AuthMiddleware) Authenticate() gin.HandlerFunc {
 	}
 }
 
-func (m *AuthMiddleware) parseAccessTokenFromCookie(c *gin.Context) (jwt.MapClaims, error) {
+func (m *authMiddleware) parseAccessTokenFromCookie(c *gin.Context) (jwt.MapClaims, error) {
 	tokenString, err := c.Cookie("accessToken")
 	if err != nil {
 		return nil, fmt.Errorf("no token found")
@@ -81,6 +86,6 @@ func (m *AuthMiddleware) parseAccessTokenFromCookie(c *gin.Context) (jwt.MapClai
 	return claims, nil
 }
 
-func NewAuthMiddleware(config *config.Config) *AuthMiddleware {
-	return &AuthMiddleware{config}
+func NewAuthMiddleware(config *config.Config) AuthMiddleware {
+	return &authMiddleware{config}
 }

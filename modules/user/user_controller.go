@@ -8,15 +8,23 @@ import (
 	"github.com/irvanherz/gourze/modules/user/dto"
 )
 
-type UserController struct {
+type UserController interface {
+	FindManyUsers(*gin.Context)
+	CreateUser(*gin.Context)
+	FindUserByID(*gin.Context)
+	UpdateUserByID(*gin.Context)
+	DeleteUserByID(*gin.Context)
+}
+
+type userController struct {
 	Service UserService
 }
 
-func NewUserController(service UserService) *UserController {
-	return &UserController{service}
+func NewUserController(service UserService) UserController {
+	return &userController{service}
 }
 
-func (uc *UserController) FindManyUsers(c *gin.Context) {
+func (uc *userController) FindManyUsers(c *gin.Context) {
 	var filter dto.UserFilterInput
 	if err := c.ShouldBindQuery(&filter); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
@@ -30,7 +38,7 @@ func (uc *UserController) FindManyUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": users})
 }
 
-func (uc *UserController) CreateUser(c *gin.Context) {
+func (uc *userController) CreateUser(c *gin.Context) {
 	var userInput dto.UserCreateInput
 	if err := c.ShouldBindJSON(&userInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
@@ -44,7 +52,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"code": "ok", "message": "User created successfully", "data": user})
 }
 
-func (uc *UserController) FindUserByID(c *gin.Context) {
+func (uc *userController) FindUserByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
@@ -59,7 +67,7 @@ func (uc *UserController) FindUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": user})
 }
 
-func (uc *UserController) UpdateUserByID(c *gin.Context) {
+func (uc *userController) UpdateUserByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
@@ -80,7 +88,7 @@ func (uc *UserController) UpdateUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "User updated successfully", "data": user})
 }
 
-func (uc *UserController) DeleteUserByID(c *gin.Context) {
+func (uc *userController) DeleteUserByID(c *gin.Context) {
 	id := c.Param("id")
 	uid, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
