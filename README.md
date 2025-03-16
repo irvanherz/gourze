@@ -41,16 +41,18 @@ Create a `.env` file and add the following configurations:
 ```sh
 DB_HOST=localhost
 DB_USER=postgres
-DB_PASS=your_password_here
+DB_PASS=xxx
 DB_NAME=gourze
 DB_PORT=5432
 
-BUNNYCDN_STORAGE_ZONE=your_storage_zone_here
-BUNNYCDN_ACCESS_KEY=your_access_key_here
-BUNNYCDN_REGION=sg
-BUNNYCDN_DOWNLOAD_BASE_URL=https://your-cdn-url-here
+BUNNY_STORAGE_ZONE=xxx
+BUNNY_STORAGE_ACCESS_KEY=xxx
+BUNNY_STORAGE_REGION=sg
+BUNNY_STORAGE_DOWNLOAD_BASE_URL=xxx
 
-JWT_SECRET=your_jwt_secret_here
+BUNNY_STREAM_ACCESS_KEY=
+
+JWT_SECRET=xxxxxxxxxxxxxxxx
 ```
 
 ### **3. Install Dependencies**

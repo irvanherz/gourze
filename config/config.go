@@ -46,9 +46,9 @@ func ProvideConfig() (*Config, error) {
 		},
 		Bunny: BunnyConfig{
 			StorageZone:     getEnv("BUNNY_STORAGE_ZONE", ""),
-			AccessKey:       getEnv("BUNNY_ACCESS_KEY", ""),
-			Region:          getEnv("BUNNY_REGION", ""),
-			DownloadBaseURL: getEnv("BUNNY_DOWNLOAD_BASE_URL", ""),
+			AccessKey:       getEnv("BUNNY_STORAGE_ACCESS_KEY", ""),
+			Region:          getEnv("BUNNY_STORAGE_REGION", ""),
+			DownloadBaseURL: getEnv("BUNNY_STORAGE_DOWNLOAD_BASE_URL", ""),
 		},
 		Auth: AuthConfig{
 			JWTSecret: getEnv("JWT_SECRET", ""),

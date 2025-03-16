@@ -32,8 +32,8 @@ func ProvideRouter(params RouterParams) *gin.Engine {
 
 	userRoutes := r.Group("/users")
 	{
-		userRoutes.GET("/", params.AuthMiddleware.Authorize(true, user.Admin), params.UserController.FindManyUsers)
-		userRoutes.POST("/", params.AuthMiddleware.Authorize(true, user.Admin), params.UserController.CreateUsers)
+		userRoutes.GET("/", params.AuthMiddleware.Authorize(false, user.Admin), params.UserController.FindManyUsers)
+		userRoutes.POST("/", params.AuthMiddleware.Authorize(false, user.Admin), params.UserController.CreateUser)
 	}
 
 	mediaRoutes := r.Group("/media")
@@ -44,7 +44,7 @@ func ProvideRouter(params RouterParams) *gin.Engine {
 
 	courseRoutes := r.Group("/courses")
 	{
-		courseRoutes.GET("/", params.CourseController.FindManyCourse)
+		courseRoutes.GET("/", params.CourseController.FindManyCourses)
 		courseRoutes.POST("/", params.CourseController.CreateCourse)
 	}
 

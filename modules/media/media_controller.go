@@ -34,7 +34,12 @@ func (uc *MediaController) UploadPhoto(c *gin.Context) {
 }
 
 func (uc *MediaController) FindManyMedia(c *gin.Context) {
-	medias, err := uc.Service.FindManyMedia()
+	var filter dto.MediaFilterInput
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
+		return
+	}
+	medias, err := uc.Service.FindManyMedia(&filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return

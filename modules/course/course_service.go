@@ -1,13 +1,14 @@
 package course
 
 import (
+	"github.com/creasty/defaults"
 	"github.com/irvanherz/gourze/modules/course/dto"
 	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
 type CourseService interface {
-	FindManyCourses() ([]Course, error)
+	FindManyCourses(filter *dto.CourseFilterInput) ([]Course, error)
 	CreateCourse(course *dto.CourseCreateInput) (*Course, error)
 	FindCourseByID(id uint) (*Course, error)
 	UpdateCourseByID(id uint, course *dto.CourseUpdateInput) (*Course, error)
@@ -22,9 +23,15 @@ func NewCourseService(db *gorm.DB) CourseService {
 	return &courseService{Db: db}
 }
 
-func (s *courseService) FindManyCourses() ([]Course, error) {
+func (s *courseService) FindManyCourses(filter *dto.CourseFilterInput) ([]Course, error) {
 	var courses []Course
-	if err := s.Db.Find(&courses).Error; err != nil {
+	if err := defaults.Set(filter); err != nil {
+		return nil, err
+	}
+	query := s.Db
+	query = filter.Apply(query)
+
+	if err := query.Find(&courses).Error; err != nil {
 		return nil, err
 	}
 	return courses, nil

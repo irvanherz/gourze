@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/creasty/defaults"
 	"github.com/disintegration/imaging"
 	"github.com/go-resty/resty/v2"
 	"github.com/irvanherz/gourze/config"
@@ -35,7 +36,7 @@ var photoImageSizes = []ImageSize{
 }
 
 type MediaService interface {
-	FindManyMedia() ([]Media, error)
+	FindManyMedia(filter *dto.MediaFilterInput) ([]Media, error)
 	FindMediaByID(id uint) (*Media, error)
 	UpdateMediaByID(id uint, media *dto.MediaUpdateInput) (*Media, error)
 	DeleteMediaByID(id uint) (*Media, error)
@@ -51,9 +52,15 @@ func NewMediaService(db *gorm.DB, conf *config.Config) MediaService {
 	return &mediaService{Db: db, Config: conf}
 }
 
-func (s *mediaService) FindManyMedia() ([]Media, error) {
+func (s *mediaService) FindManyMedia(filter *dto.MediaFilterInput) ([]Media, error) {
 	var medias []Media
-	if err := s.Db.Find(&medias).Error; err != nil {
+	if err := defaults.Set(filter); err != nil {
+		return nil, err
+	}
+	query := s.Db
+	query = filter.Apply(query)
+
+	if err := query.Find(&medias).Error; err != nil {
 		return nil, err
 	}
 	return medias, nil

@@ -11,6 +11,7 @@ import (
 	"github.com/irvanherz/gourze/modules/user"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func ProvideDatabase(config *config.Config) (*gorm.DB, error) {
@@ -23,7 +24,9 @@ func ProvideDatabase(config *config.Config) (*gorm.DB, error) {
 		config.Database.Port,
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}

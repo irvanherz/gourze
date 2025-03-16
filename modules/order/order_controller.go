@@ -17,7 +17,12 @@ func NewOrderController(service OrderService) *OrderController {
 }
 
 func (oc *OrderController) FindManyOrders(c *gin.Context) {
-	orders, err := oc.Service.FindManyOrders()
+	var filter dto.OrderFilterInput
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
+		return
+	}
+	orders, err := oc.Service.FindManyOrders(&filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return

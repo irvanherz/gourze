@@ -17,7 +17,12 @@ func NewUserController(service UserService) *UserController {
 }
 
 func (uc *UserController) FindManyUsers(c *gin.Context) {
-	users, err := uc.Service.FindManyUsers()
+	var filter dto.UserFilterInput
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
+		return
+	}
+	users, err := uc.Service.FindManyUsers(&filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
@@ -25,7 +30,7 @@ func (uc *UserController) FindManyUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": users})
 }
 
-func (uc *UserController) CreateUsers(c *gin.Context) {
+func (uc *UserController) CreateUser(c *gin.Context) {
 	var userInput dto.UserCreateInput
 	if err := c.ShouldBindJSON(&userInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})

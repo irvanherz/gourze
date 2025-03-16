@@ -1,13 +1,14 @@
 package order
 
 import (
+	"github.com/creasty/defaults"
 	"github.com/irvanherz/gourze/modules/order/dto"
 	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
 type OrderService interface {
-	FindManyOrders() ([]Order, error)
+	FindManyOrders(filter *dto.OrderFilterInput) ([]Order, error)
 	CreateOrder(order *dto.OrderCreateInput) (*Order, error)
 	FindOrderByID(id uint) (*Order, error)
 	UpdateOrderByID(id uint, order *dto.OrderUpdateInput) (*Order, error)
@@ -22,11 +23,19 @@ func NewOrderService(db *gorm.DB) OrderService {
 	return &orderService{Db: db}
 }
 
-func (s *orderService) FindManyOrders() ([]Order, error) {
+func (s *orderService) FindManyOrders(filter *dto.OrderFilterInput) ([]Order, error) {
 	var orders []Order
-	if err := s.Db.Find(&orders).Error; err != nil {
+
+	if err := defaults.Set(filter); err != nil {
 		return nil, err
 	}
+	query := s.Db
+	query = filter.Apply(query)
+
+	if err := query.Find(&orders).Error; err != nil {
+		return nil, err
+	}
+
 	return orders, nil
 }
 

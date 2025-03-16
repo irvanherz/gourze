@@ -1,13 +1,14 @@
 package user
 
 import (
+	"github.com/creasty/defaults"
 	"github.com/irvanherz/gourze/modules/user/dto"
 	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
 type UserService interface {
-	FindManyUsers() ([]User, error)
+	FindManyUsers(filter *dto.UserFilterInput) ([]User, error)
 	CreateUser(user *dto.UserCreateInput) (*User, error)
 	FindUserByID(id uint) (*User, error)
 	UpdateUserByID(id uint, user *dto.UserUpdateInput) (*User, error)
@@ -22,9 +23,16 @@ func NewUserService(db *gorm.DB) UserService {
 	return &userService{Db: db}
 }
 
-func (s *userService) FindManyUsers() ([]User, error) {
+func (s *userService) FindManyUsers(filter *dto.UserFilterInput) ([]User, error) {
 	var users []User
-	if err := s.Db.Find(&users).Error; err != nil {
+
+	if err := defaults.Set(filter); err != nil {
+		return nil, err
+	}
+	query := s.Db
+	query = filter.Apply(query)
+
+	if err := query.Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil

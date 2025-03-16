@@ -20,10 +20,17 @@ func TestFindManyUsers(t *testing.T) {
 	service := NewUserService(db)
 
 	// Seed data
-	db.Create(&User{FullName: "John Doe"})
-	db.Create(&User{FullName: "Jane Doe"})
+	db.Create(&User{Username: "john_doe", Email: "john@doe.com", FullName: "John Doe"})
+	db.Create(&User{Username: "jane_doe", Email: "jane@doe.com", FullName: "Jane Doe"})
 
-	users, err := service.FindManyUsers()
+	filter := &dto.UserFilterInput{
+		SortBy:    "username",
+		SortOrder: "asc",
+		Page:      1,
+		Take:      10,
+	}
+
+	users, err := service.FindManyUsers(filter)
 	assert.NoError(t, err)
 	assert.Len(t, users, 2)
 }
