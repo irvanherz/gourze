@@ -9,9 +9,9 @@ import (
 
 type OrderService interface {
 	FindManyOrders(filter *dto.OrderFilterInput) ([]Order, int64, error)
-	CreateOrder(order *dto.OrderCreateInput) (*Order, error)
+	CreateOrder(input *dto.OrderCreateInput) (*Order, error)
 	FindOrderByID(id uint) (*Order, error)
-	UpdateOrderByID(id uint, order *dto.OrderUpdateInput) (*Order, error)
+	UpdateOrderByID(id uint, input *dto.OrderUpdateInput) (*Order, error)
 	DeleteOrderByID(id uint) (*Order, error)
 }
 

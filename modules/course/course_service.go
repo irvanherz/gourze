@@ -9,9 +9,9 @@ import (
 
 type CourseService interface {
 	FindManyCourses(filter *dto.CourseFilterInput) ([]Course, int64, error)
-	CreateCourse(course *dto.CourseCreateInput) (*Course, error)
+	CreateCourse(input *dto.CourseCreateInput) (*Course, error)
 	FindCourseByID(id uint) (*Course, error)
-	UpdateCourseByID(id uint, course *dto.CourseUpdateInput) (*Course, error)
+	UpdateCourseByID(id uint, input *dto.CourseUpdateInput) (*Course, error)
 	DeleteCourseByID(id uint) (*Course, error)
 }
 
@@ -22,6 +22,7 @@ type courseService struct {
 func NewCourseService(db *gorm.DB) CourseService {
 	return &courseService{Db: db}
 }
+
 func (s *courseService) FindManyCourses(filter *dto.CourseFilterInput) ([]Course, int64, error) {
 	var courses []Course
 	var count int64

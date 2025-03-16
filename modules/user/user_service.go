@@ -9,9 +9,9 @@ import (
 
 type UserService interface {
 	FindManyUsers(filter *dto.UserFilterInput) ([]User, int64, error)
-	CreateUser(user *dto.UserCreateInput) (*User, error)
+	CreateUser(input *dto.UserCreateInput) (*User, error)
 	FindUserByID(id uint) (*User, error)
-	UpdateUserByID(id uint, user *dto.UserUpdateInput) (*User, error)
+	UpdateUserByID(id uint, input *dto.UserUpdateInput) (*User, error)
 	DeleteUserByID(id uint) (*User, error)
 }
 

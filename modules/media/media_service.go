@@ -38,7 +38,7 @@ var photoImageSizes = []ImageSize{
 type MediaService interface {
 	FindManyMedia(filter *dto.MediaFilterInput) ([]Media, int64, error)
 	FindMediaByID(id uint) (*Media, error)
-	UpdateMediaByID(id uint, media *dto.MediaUpdateInput) (*Media, error)
+	UpdateMediaByID(id uint, input *dto.MediaUpdateInput) (*Media, error)
 	DeleteMediaByID(id uint) (*Media, error)
 	UploadPhoto(file multipart.File, originalName string) (*Media, error)
 }
