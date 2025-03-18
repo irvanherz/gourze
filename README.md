@@ -68,6 +68,7 @@ Before running migrations, manually create required PostgreSQL enum types:
 ```sql
 CREATE TYPE user_role AS ENUM ('super', 'admin', 'generic');
 CREATE TYPE media_type AS ENUM ('image', 'document', 'video');
+CREATE TYPE media_upload_status AS ENUM ('uploading','uploaded','processing','processed','failed');
 CREATE TYPE order_status AS ENUM ('unpaid', 'paid', 'canceled');
 ```
 

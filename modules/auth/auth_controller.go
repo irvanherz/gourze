@@ -31,6 +31,8 @@ func (ac *authController) Signin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "internal-server-error", "message": err.Error()})
 		return
 	}
+	c.SetCookie("accessToken", result.AccessToken, 3600, "/", "", false, true)
+	c.SetCookie("refreshToken", result.RefreshToken, 3600, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Signin successful", "data": result})
 }
 

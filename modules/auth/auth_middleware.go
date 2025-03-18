@@ -35,13 +35,17 @@ func (m *authMiddleware) Authorize(mandatory bool, allowedRoles ...user.UserRole
 
 		// Retrieve user role from claims
 		claims := user.(jwt.MapClaims)
-		userRole, ok := claims["role"].(string)
+		userRole, ok := claims["aud"].(string)
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
 
 		// Check if user role is allowed
+		if len(allowedRoles) == 0 {
+			c.Next()
+			return
+		}
 		for _, role := range allowedRoles {
 			if userRole == string(role) {
 				c.Next()
@@ -72,7 +76,7 @@ func (m *authMiddleware) parseAccessTokenFromCookie(c *gin.Context) (jwt.MapClai
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return m.Config.Auth.JWTSecret, nil
+		return []byte(m.Config.Auth.JWTSecret), nil
 	})
 	if err != nil || !token.Valid {
 		return nil, fmt.Errorf("invalid token")

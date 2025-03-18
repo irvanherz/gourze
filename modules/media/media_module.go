@@ -6,4 +6,5 @@ import "go.uber.org/fx"
 var Module = fx.Module("media",
 	fx.Provide(NewMediaService),
 	fx.Provide(NewMediaController),
+	fx.Provide(NewBunnyService),
 )

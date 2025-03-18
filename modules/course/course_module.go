@@ -6,4 +6,6 @@ import "go.uber.org/fx"
 var Module = fx.Module("course",
 	fx.Provide(NewCourseService),
 	fx.Provide(NewCourseController),
+	fx.Provide(NewCategoryService),
+	fx.Provide(NewCategoryController),
 )

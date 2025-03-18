@@ -59,16 +59,22 @@ func (s *authService) Signin(input dto.AuthSigninInput) (*dto.AuthResultDto, err
 	if err != nil {
 		return nil, err
 	}
+
+	var authUser dto.AuthUser
+	copier.Copy(&authUser, &user)
 	return &dto.AuthResultDto{
 		AccessToken:          accessToken,
 		RefreshToken:         "",
 		AccessTokenExpiredAt: time.Now().Add(time.Hour).Unix(),
+		User:                 authUser,
 	}, nil
 }
 
 func (s *authService) Signup(input dto.AuthSignupInput) (*dto.AuthResultDto, error) {
 	var user user.User
 	copier.Copy(&user, &input)
+	// userMeta, _ := json.Marshal(map[string]interface{}{})
+	// user.Meta = datatypes.JSON(userMeta)
 	hashedPassword, err := s.HashPassword(input.Password)
 	if err != nil {
 		return nil, err
@@ -84,10 +90,13 @@ func (s *authService) Signup(input dto.AuthSignupInput) (*dto.AuthResultDto, err
 		return nil, err
 	}
 
+	var authUser dto.AuthUser
+	copier.Copy(&authUser, &user)
 	return &dto.AuthResultDto{
 		AccessToken:          accessToken,
 		RefreshToken:         "",
 		AccessTokenExpiredAt: 0,
+		User:                 authUser,
 	}, nil
 }
 

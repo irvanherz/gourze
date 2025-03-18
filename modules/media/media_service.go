@@ -1,21 +1,19 @@
 package media
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"image"
 	"image/jpeg"
-	"io"
 	"math/rand"
 	"mime/multipart"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/creasty/defaults"
 	"github.com/disintegration/imaging"
-	"github.com/go-resty/resty/v2"
 	"github.com/irvanherz/gourze/config"
 	"github.com/irvanherz/gourze/modules/media/dto"
 	"github.com/jinzhu/copier"
@@ -41,15 +39,17 @@ type MediaService interface {
 	UpdateMediaByID(id uint, input *dto.MediaUpdateInput) (*Media, error)
 	DeleteMediaByID(id uint) (*Media, error)
 	UploadPhoto(file multipart.File, originalName string) (*Media, error)
+	UploadVideoViaTus(input *dto.MediaUploadVideoViaTusInput) (*dto.MediaUploadVideoViaTusResult, error)
 }
 
 type mediaService struct {
-	Db     *gorm.DB
-	Config *config.Config
+	Db           *gorm.DB
+	Config       *config.Config
+	BunnyService BunnyService
 }
 
-func NewMediaService(db *gorm.DB, conf *config.Config) MediaService {
-	return &mediaService{Db: db, Config: conf}
+func NewMediaService(db *gorm.DB, conf *config.Config, bunnyService BunnyService) MediaService {
+	return &mediaService{Db: db, Config: conf, BunnyService: bunnyService}
 }
 
 func (s *mediaService) FindManyMedia(filter *dto.MediaFilterInput) ([]Media, int64, error) {
@@ -106,7 +106,6 @@ func (s *mediaService) DeleteMediaByID(id uint) (*Media, error) {
 }
 
 func (s *mediaService) UploadPhoto(file multipart.File, originalFileName string) (*Media, error) {
-	resizedTempDir := os.TempDir()
 	img, _, err := image.Decode(file)
 	if err != nil {
 		return nil, err
@@ -120,29 +119,18 @@ func (s *mediaService) UploadPhoto(file multipart.File, originalFileName string)
 		// Resize image
 		resizedImage := imaging.Resize(img, sz.Width, sz.Height, imaging.Lanczos)
 		resizedFileName := fmt.Sprintf("%s_%s.jpg", randomizedFileName, sz.ID)
-		resizedFilePath := filepath.Join(resizedTempDir, resizedFileName)
-
-		// Create temp file
-		outFile, err := os.Create(resizedFilePath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create file: %w", err)
-		}
 
 		// Explicitly close before uploading
-		err = jpeg.Encode(outFile, resizedImage, &jpeg.Options{Quality: 90})
-		outFile.Close()
-		if err != nil {
+		resizedBuffer := new(bytes.Buffer)
+		if err := jpeg.Encode(resizedBuffer, resizedImage, nil); err != nil {
 			return nil, fmt.Errorf("failed to encode JPEG: %w", err)
 		}
 
 		// Upload to BunnyCDN
-		downloadUrl, err := s.uploadToBunnyCDN(resizedFilePath, resizedFileName)
+		downloadUrl, err := s.BunnyService.UploadFile(resizedBuffer.Bytes(), "/"+resizedFileName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to upload to BunnyCDN: %w", err)
 		}
-
-		// Remove temp file **only if upload is successful**
-		_ = os.Remove(resizedFilePath)
 
 		imageFiles[i] = ImageMediaFileData{
 			ID:       sz.ID,
@@ -175,39 +163,54 @@ func (s *mediaService) UploadPhoto(file multipart.File, originalFileName string)
 	return &media, nil
 }
 
-func (s *mediaService) uploadToBunnyCDN(filePath, fileName string) (string, error) {
-	client := resty.New()
-	url := fmt.Sprintf("https://%s.storage.bunnycdn.com/%s/%s", s.Config.Bunny.Region, s.Config.Bunny.StorageZone, fileName)
-
-	file, err := os.Open(filePath)
+// UploadVideoViaTus implements MediaService.
+func (s *mediaService) UploadVideoViaTus(input *dto.MediaUploadVideoViaTusInput) (*dto.MediaUploadVideoViaTusResult, error) {
+	createdVideo, err := s.BunnyService.CreateVideo(&dto.BunnyCreateVideoInput{
+		LibraryID: s.Config.Bunny.StreamLibraryID,
+		Title:     input.Title,
+	})
 	if err != nil {
-		return "", fmt.Errorf("failed to open file: %w", err)
+		return nil, err
 	}
-	defer file.Close()
-
-	// Read file contents
-	fileData, err := io.ReadAll(file)
-
+	mediaData := VideoMediaData{
+		Version:  "1.0",
+		Provider: "bunny",
+		VideoID:  createdVideo.Guid,
+	}
+	mediaDataJson, err := json.Marshal(mediaData)
 	if err != nil {
-		return "", fmt.Errorf("failed to read file: %w", err)
+		return nil, fmt.Errorf("failed to marshal data: %w", err)
+	}
+	media := Media{
+		Type:         Video,
+		UploadStatus: Uploading,
+		Title:        input.Title,
+		Data:         mediaDataJson,
+	}
+	if err := s.Db.Save(&media).Error; err != nil {
+		return nil, err
 	}
 
-	resp, err := client.R().
-		SetHeader("AccessKey", s.Config.Bunny.AccessKey).
-		SetHeader("Content-Type", "image/jpeg").
-		SetBody(fileData).
-		Put(url)
-
-	if err != nil || resp.StatusCode() != 201 {
-		return "", fmt.Errorf("upload failed: %v, response: %s", err, resp.String())
-	}
-
-	return fmt.Sprintf("%s/%s", s.Config.Bunny.DownloadBaseURL, fileName), nil
+	uploadSignature := s.BunnyService.ComputeTusUploadSignature(s.Config.Bunny.StreamLibraryID, createdVideo.Guid, s.Config.Bunny.StreamExpirationTime)
+	return &dto.MediaUploadVideoViaTusResult{
+		Headers: dto.MediaUploadVideoViaTusResultHeaders{
+			AuthorizationSignature: uploadSignature,
+			AuthorizationExpire:    s.Config.Bunny.StreamExpirationTime,
+			VideoId:                createdVideo.Guid,
+			LibraryId:              s.Config.Bunny.StreamLibraryID,
+		},
+		Metadata: dto.MediaUploadVideoViaTusResultMetadata{
+			Filetype: input.Filetype,
+			Title:    input.Title,
+			UserID:   input.UserID,
+		},
+	}, nil
 }
 
-type UploadResult struct {
-	FileName string `json:"fileName"`
-	URL      string `json:"url"`
+type VideoMediaData struct {
+	Version  string `json:"version"`
+	Provider string `json:"provider"`
+	VideoID  string `json:"videoId"`
 }
 
 type ImageMediaData struct {
@@ -224,15 +227,8 @@ type ImageMediaFileData struct {
 }
 
 func generateRandomNumericFilename() string {
-	// Get current timestamp in milliseconds
 	timestamp := time.Now().UnixMicro()
-
-	// Generate a random 6-digit number
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	// Generate a random 6-digit number (100000 - 999999)
 	randomNumber := r.Intn(900000) + 100000
-
-	// Concatenate timestamp and random number
 	return fmt.Sprintf("%d%d", timestamp, randomNumber)
 }

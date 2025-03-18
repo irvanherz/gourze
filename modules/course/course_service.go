@@ -39,7 +39,7 @@ func (s *courseService) FindManyCourses(filter *dto.CourseFilterInput) ([]Course
 
 	query = filter.ApplyPagination(query)
 
-	if err := query.Find(&courses).Error; err != nil {
+	if err := query.Preload("User").Preload("Category").Find(&courses).Error; err != nil {
 		return nil, 0, err
 	}
 	return courses, count, nil
@@ -49,7 +49,7 @@ func (s *courseService) CreateCourse(input *dto.CourseCreateInput) (*Course, err
 	var course Course
 	copier.Copy(&course, &input)
 
-	if err := s.Db.Create(&course).Error; err != nil {
+	if err := s.Db.Preload("User").Preload("Category").Create(&course).Error; err != nil {
 		return nil, err
 	}
 	return &course, nil
@@ -57,7 +57,7 @@ func (s *courseService) CreateCourse(input *dto.CourseCreateInput) (*Course, err
 
 func (s *courseService) FindCourseByID(id uint) (*Course, error) {
 	var course Course
-	if err := s.Db.First(&course, id).Error; err != nil {
+	if err := s.Db.Preload("User").Preload("Category").First(&course, id).Error; err != nil {
 		return nil, err
 	}
 	return &course, nil
@@ -69,7 +69,7 @@ func (s *courseService) UpdateCourseByID(id uint, input *dto.CourseUpdateInput) 
 		return nil, err
 	}
 	copier.Copy(&course, &input)
-	if err := s.Db.Save(&course).Error; err != nil {
+	if err := s.Db.Preload("User").Preload("Category").Save(&course).Error; err != nil {
 		return nil, err
 	}
 	return &course, nil
@@ -80,7 +80,7 @@ func (s *courseService) DeleteCourseByID(id uint) (*Course, error) {
 	if err := s.Db.First(&course, id).Error; err != nil {
 		return nil, err
 	}
-	if err := s.Db.Delete(&Course{}, id).Error; err != nil {
+	if err := s.Db.Preload("User").Preload("Category").Delete(&Course{}, id).Error; err != nil {
 		return nil, err
 	}
 	return &course, nil

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/irvanherz/gourze/modules/media"
 	"github.com/irvanherz/gourze/modules/order"
 	"github.com/irvanherz/gourze/modules/user"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -37,6 +39,20 @@ func ProvideDatabase(config *config.Config) (*gorm.DB, error) {
 	err = db.AutoMigrate(&user.User{}, &course.Category{}, &course.Course{}, &course.Chapter{}, &course.CourseUser{}, &media.Media{}, &order.Order{}, &order.OrderItem{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
+	}
+	if db.Migrator().HasTable(&user.User{}) {
+		if err := db.Where("username = ?", "root").First(&user.User{}).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("root"), bcrypt.DefaultCost)
+			rootUser := user.User{
+				ID:       1,
+				Username: "root",
+				Email:    "root@gourze.com",
+				FullName: "Root",
+				Password: string(hashedPassword),
+				Role:     user.Super,
+			}
+			db.Save(&rootUser)
+		}
 	}
 
 	fmt.Println("✅ Database migration completed!")

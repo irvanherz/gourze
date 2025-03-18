@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/irvanherz/gourze/modules/media/dto"
+	"github.com/irvanherz/gourze/utils"
 )
 
 type MediaController interface {
@@ -14,6 +15,7 @@ type MediaController interface {
 	UpdateMediaByID(*gin.Context)
 	DeleteMediaByID(*gin.Context)
 	UploadPhoto(*gin.Context)
+	UploadVideoViaTus(*gin.Context)
 }
 
 type mediaController struct {
@@ -117,4 +119,23 @@ func (mc *mediaController) DeleteMediaByID(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusNoContent, gin.H{"code": "ok", "message": "Media deleted successfully", "data": media})
+}
+
+// UploadVideoViaTus implements MediaController.
+func (mc *mediaController) UploadVideoViaTus(c *gin.Context) {
+	var input dto.MediaUploadVideoViaTusInput
+	currentUser, _ := utils.GetCurrentUser(c)
+	if input.UserID == 0 {
+		input.UserID = currentUser.ID
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "invalid-params", "message": err.Error()})
+		return
+	}
+	result, err := mc.Service.UploadVideoViaTus(&input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "internal-server-error", "message": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": "ok", "message": "Success", "data": result})
 }

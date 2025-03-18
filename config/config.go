@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -21,10 +22,13 @@ type DatabaseConfig struct {
 }
 
 type BunnyConfig struct {
-	StorageZone     string
-	AccessKey       string
-	Region          string
-	DownloadBaseURL string
+	StorageZone          string
+	AccessKey            string
+	Region               string
+	DownloadBaseURL      string
+	StreamLibraryID      uint64
+	StreamAccessKey      string
+	StreamExpirationTime uint64
 }
 
 type AuthConfig struct {
@@ -36,6 +40,8 @@ func ProvideConfig() (*Config, error) {
 	if err != nil {
 		panic("⚠️ No .env file found!")
 	}
+	streamLibraryID, _ := strconv.ParseUint(getEnv("BUNNY_STREAM_LIBRARY_ID", ""), 10, 32)
+	streamExpirationTime, _ := strconv.ParseUint(getEnv("BUNNY_STREAM_UPLOAD_EXPIRATION_TIME", ""), 10, 32)
 	return &Config{
 		Database: DatabaseConfig{
 			Host: getEnv("DB_HOST", ""),
@@ -45,10 +51,13 @@ func ProvideConfig() (*Config, error) {
 			Name: getEnv("DB_NAME", ""),
 		},
 		Bunny: BunnyConfig{
-			StorageZone:     getEnv("BUNNY_STORAGE_ZONE", ""),
-			AccessKey:       getEnv("BUNNY_STORAGE_ACCESS_KEY", ""),
-			Region:          getEnv("BUNNY_STORAGE_REGION", ""),
-			DownloadBaseURL: getEnv("BUNNY_STORAGE_DOWNLOAD_BASE_URL", ""),
+			StorageZone:          getEnv("BUNNY_STORAGE_ZONE", ""),
+			AccessKey:            getEnv("BUNNY_STORAGE_ACCESS_KEY", ""),
+			Region:               getEnv("BUNNY_STORAGE_REGION", ""),
+			DownloadBaseURL:      getEnv("BUNNY_STORAGE_DOWNLOAD_BASE_URL", ""),
+			StreamLibraryID:      streamLibraryID,
+			StreamAccessKey:      getEnv("BUNNY_STREAM_ACCESS_KEY", ""),
+			StreamExpirationTime: streamExpirationTime,
 		},
 		Auth: AuthConfig{
 			JWTSecret: getEnv("JWT_SECRET", ""),

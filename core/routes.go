@@ -12,12 +12,13 @@ import (
 
 type RouterParams struct {
 	fx.In
-	AuthController   auth.AuthController
-	AuthMiddleware   auth.AuthMiddleware
-	UserController   user.UserController
-	MediaController  media.MediaController
-	CourseController course.CourseController
-	OrderController  order.OrderController
+	AuthController     auth.AuthController
+	AuthMiddleware     auth.AuthMiddleware
+	UserController     user.UserController
+	MediaController    media.MediaController
+	CourseController   course.CourseController
+	OrderController    order.OrderController
+	CategoryController course.CategoryController
 }
 
 func ProvideRouter(params RouterParams) *gin.Engine {
@@ -40,10 +41,16 @@ func ProvideRouter(params RouterParams) *gin.Engine {
 	{
 		mediaRoutes.GET("/", params.AuthMiddleware.Authorize(false), params.MediaController.FindManyMedia)
 		mediaRoutes.POST("/upload-photo", params.AuthMiddleware.Authorize(true), params.MediaController.UploadPhoto)
+		mediaRoutes.POST("/upload-video-via-tus", params.AuthMiddleware.Authorize(true), params.MediaController.UploadVideoViaTus)
 	}
 
 	courseRoutes := r.Group("/courses")
 	{
+		categoryRoutes := courseRoutes.Group("/categories")
+		{
+			categoryRoutes.GET("/", params.CategoryController.FindManyCategories)
+			categoryRoutes.POST("/", params.AuthMiddleware.Authorize(true, user.Super, user.Admin), params.CategoryController.CreateCategory)
+		}
 		courseRoutes.GET("/", params.CourseController.FindManyCourses)
 		courseRoutes.POST("/", params.CourseController.CreateCourse)
 	}
